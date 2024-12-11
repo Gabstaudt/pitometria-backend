@@ -8,6 +8,7 @@ dotenv.config();
 const setoresRoutes = require('./routes/setores');
 const pontosRoutes = require('./routes/pontos');
 
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
