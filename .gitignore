@@ -1,0 +1,8 @@
+# Ignorar arquivos temporários do sistema
+*.log
+*.tmp
+
+# Ignorar diretórios específicos
+/node_modules/
+/dist/
+
