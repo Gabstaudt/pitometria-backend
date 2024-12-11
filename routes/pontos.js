@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const ExcelJS = require('exceljs');
 const db = require('../config/db');
-
+const puppeteer = require('puppeteer');
+const pool = require('../config/db');
 //////////////////////////////////////// gerar planilha e estilo dela//////////////////////////////
 router.get('/exportar', async (req, res) => {
   try {
@@ -126,5 +127,65 @@ router.delete('/:id', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+//////////////////////testes////////////////////
 
+router.get('/exportar-relatorio', async (req, res) => {
+  try {
+      // Iniciar o Puppeteer
+      const browser = await puppeteer.launch();
+      const page = await browser.newPage();
+
+      // Carregar a página do frontend
+      await page.goto('http://localhost:3000/graficos', {
+          waitUntil: 'networkidle2'
+      });
+
+      // Capturar a página como PDF
+      const pdfBuffer = await page.pdf({
+          format: 'A4',
+          printBackground: true
+      });
+
+      await browser.close();
+
+      // Enviar o PDF para download
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'attachment; filename=relatorio.pdf');
+      res.send(pdfBuffer);
+  } catch (error) {
+      console.error('Erro ao gerar relatório:', error);
+      res.status(500).send('Erro ao gerar relatório.');
+  }
+});
+
+// Rota para fornecer dados ao frontend
+router.get('/relatorios/dados-graficos', async (req, res) => {
+  try {
+      // Executar a consulta usando o pool de conexões
+      const [dados] = await pool.execute(`
+          SELECT 
+              setores.nome AS categoria, 
+              SUM(pontos_de_medicao.vazao_m3_h) AS total
+          FROM 
+              setores
+          JOIN 
+              pontos_de_medicao 
+          ON 
+              setores.id = pontos_de_medicao.setor_id
+          GROUP BY 
+              setores.nome
+      `);
+
+      // Preparar a resposta
+      const resposta = dados.map(d => ({
+          categoria: d.categoria,
+          total: parseFloat(d.total), // Garantir que o valor seja numérico
+      }));
+
+      res.json(resposta); // Enviar os dados ao frontend
+  } catch (error) {
+      console.error('Erro ao buscar dados para gráficos:', error.message);
+      res.status(500).json({ error: `Erro ao buscar dados: ${error.message}` });
+  }
+});
 module.exports = router;
