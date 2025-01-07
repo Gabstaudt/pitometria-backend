@@ -188,4 +188,28 @@ router.get('/relatorios/dados-graficos', async (req, res) => {
       res.status(500).json({ error: `Erro ao buscar dados: ${error.message}` });
   }
 });
+
+router.get('/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const query = `
+      SELECT id, ponto_de_medicao, vazao_m3_h, pressao_mca, observacao 
+      FROM pontos_de_medicao
+      WHERE id = ?
+    `;
+    const [results] = await db.query(query, [id]);
+
+    if (results.length === 0) {
+      return res.status(404).json({ message: 'Ponto de medição não encontrado.' });
+    }
+
+    res.json(results[0]);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Erro ao buscar ponto de medição.' });
+  }
+});
+
+
+
 module.exports = router;
