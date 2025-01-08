@@ -81,12 +81,29 @@ router.get('/exportar', async (req, res) => {
 // Obter todos os pontos de medição
 router.get('/', async (req, res) => {
   try {
-    const [pontos] = await db.query('SELECT * FROM pontos_de_medicao');
-    res.json(pontos);
+    const query = `
+      SELECT 
+        pontos.id,
+        pontos.ponto_de_medicao,
+        pontos.ep,
+        pontos.vazao_m3_h,
+        pontos.pressao_mca,
+        pontos.latitude,
+        pontos.longitude,
+        pontos.observacao,
+        setores.nome AS setor_nome
+      FROM pontos_de_medicao AS pontos
+      LEFT JOIN setores ON setores.id = pontos.setor_id
+    `;
+
+    const [pontos] = await db.query(query); // Executa a consulta
+    res.json(pontos); // Envia os dados para o frontend
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Erro ao buscar pontos de medição:', err.message);
+    res.status(500).json({ error: 'Erro ao buscar pontos de medição.' });
   }
 });
+
 
 // Criar um novo ponto de medição
 router.post('/', async (req, res) => {
