@@ -105,17 +105,65 @@ router.post('/', async (req, res) => {
 // Atualizar um ponto de medição
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
-  const { ep, ponto_de_medicao, vazao_m3_h, dif, data_de_medicao, hora_de_medicao, volume_m3, pressao_mca, croqui, latitude, longitude, observacao, setor_id } = req.body;
+  const {
+    ep,
+    ponto_de_medicao,
+    vazao_m3_h,
+    dif,
+    data_de_medicao,
+    hora_de_medicao,
+    volume_m3,
+    pressao_mca,
+    croqui,
+    latitude,
+    longitude,
+    observacao,
+  } = req.body;
+
   try {
+    // Usar valor padrão para campos NOT NULL
     await db.query(
-      'UPDATE pontos_de_medicao SET ep = ?, ponto_de_medicao = ?, vazao_m3_h = ?, dif = ?, data_de_medicao = ?, hora_de_medicao = ?, volume_m3 = ?, pressao_mca = ?, croqui = ?, latitude = ?, longitude = ?, observacao = ?, setor_id = ? WHERE id = ?',
-      [ep, ponto_de_medicao, vazao_m3_h, dif, data_de_medicao, hora_de_medicao, volume_m3, pressao_mca, croqui, latitude, longitude, observacao, setor_id, id]
+      `UPDATE pontos_de_medicao
+       SET 
+         ep = ?, 
+         ponto_de_medicao = ?, 
+         vazao_m3_h = ?, 
+         dif = ?, 
+         data_de_medicao = ?, 
+         hora_de_medicao = ?, 
+         volume_m3 = ?, 
+         pressao_mca = ?, 
+         croqui = ?, 
+         latitude = ?, 
+         longitude = ?, 
+         observacao = ?
+       WHERE id = ?`,
+      [
+        ep || null,
+        ponto_de_medicao || null,
+        vazao_m3_h || null,
+        dif || null,
+        data_de_medicao || '1970-01-01', 
+        hora_de_medicao || null,
+        volume_m3 || null,
+        pressao_mca || null,
+        croqui || null,
+        latitude || null,
+        longitude || null,
+        observacao || null,
+        id,
+      ]
     );
+
     res.json({ message: 'Ponto de medição atualizado com sucesso!' });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Erro ao atualizar ponto de medição:', err);
+    res.status(500).json({ error: 'Erro ao atualizar ponto de medição.' });
   }
 });
+
+
+
 
 // Deletar um ponto de medição
 router.delete('/:id', async (req, res) => {
@@ -210,6 +258,25 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+router.put('/:id', async (req, res) => {
+  const { id } = req.params;
+  const {
+    ponto_de_medicao, ep, vazao_m3_h, pressao_mca, latitude, longitude, observacao
+  } = req.body;
+
+  try {
+    const query = `
+      UPDATE pontos_de_medicao
+      SET ponto_de_medicao = ?, ep = ?, vazao_m3_h = ?, pressao_mca = ?, latitude = ?, longitude = ?, observacao = ?
+      WHERE id = ?
+    `;
+    await db.query(query, [ponto_de_medicao, ep, vazao_m3_h, pressao_mca, latitude, longitude, observacao, id]);
+    res.json({ message: 'Ponto de medição atualizado com sucesso!' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Erro ao atualizar ponto de medição.' });
+  }
+});
 
 
 module.exports = router;
